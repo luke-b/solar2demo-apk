@@ -12,7 +12,7 @@ return {
 	androidVersionCode = os.getenv('APP_VERSION_CODE'),
 	projectPath = root .. "/Project",
 	dstPath = root .. '/Output',
-	certificatePath = root .. "/Util/android.keystore",
+	certificatePath = root .. "/Util/debug.keystore",
 	keystorePassword = os.getenv('KEYSTORE_PASSWORD'),
 	keystoreAlias = os.getenv('KEYSTORE_ALIAS'),
 	keystoreAliasPassword = os.getenv('KEYSTORE_ALIAS_PASSWORD'),
