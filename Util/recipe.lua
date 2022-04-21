@@ -13,7 +13,7 @@ return {
 	projectPath = root .. "/Project",
 	dstPath = root .. '/Output',
 	certificatePath = root .. "/Util/debug.keystore",
-	keystorePassword = os.getenv('KEYSTORE_PASSWORD'),
-	keystoreAlias = os.getenv('KEYSTORE_ALIAS'),
-	keystoreAliasPassword = os.getenv('KEYSTORE_ALIAS_PASSWORD'),
+	keystorePassword = os.getenv('KEYSTOREPASSWORD'),
+	keystoreAlias = os.getenv('KEYSTOREALIAS'),
+	keystoreAliasPassword = os.getenv('KEYSTOREALIASPASSWORD'),
 }
