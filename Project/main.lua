@@ -24,142 +24,56 @@ display.getCurrentStage():insert( sampleUI.frontGroup )
 -- BEGIN SAMPLE CODE
 ----------------------
 
--- Set up physics engine
-local physics = require( "physics" )
-physics.start( true )  -- Pass "true" as first parameter to prevent bodies from sleeping
-physics.setGravity( 0, 9.8 )  -- Initial gravity points downwards
-physics.setScale( 60 )
+-- Sample code by Eetu Rantanen.
 
--- Declare initial variables
-local letterboxWidth = math.abs(display.screenOriginX)
-local letterboxHeight = math.abs(display.screenOriginY)
+-- Change the background to blue.
+display.setDefault( "background", 0, 0.3, 0.8 )
 
--- Create "walls" around screen
-local wallL = display.newRect( worldGroup, 0-letterboxWidth, display.contentCenterY, 20, display.actualContentHeight )
-wallL.anchorX = 1
-physics.addBody( wallL, "static", { bounce=1, friction=0.1 } )
+-- Require and start the physics engine.
+local physics = require("physics")
+physics.start()
+physics.setGravity( 0, 98.1 ) -- Setting a very high gravity.
 
-local wallR = display.newRect( worldGroup, 480+letterboxWidth, display.contentCenterY, 20, display.actualContentHeight )
-wallR.anchorX = 0
-physics.addBody( wallR, "static", { bounce=1, friction=0.1 } )
+-- Create a sword altar, the ground and a crate, and give them all physics bodies.
+local swordShape = { -2, -62, 9, -62, 49, 10, 49, 95, -40, 95, -40, 10 }
+local sword = display.newImage( "img/alter.png", 510, 490 )
+physics.addBody( sword, "dynamic", { density=1, friction=0.9, bounce=0, shape=swordShape } )
 
-local wallT = display.newRect( worldGroup, display.contentCenterX, 0-letterboxHeight, display.actualContentWidth, 20 )
-wallT.anchorY = 1
-physics.addBody( wallT, "static", { bounce=0, friction=0 } )
+local block = display.newImage( "img/pushBlock3.png", 480, 100 )
+physics.addBody( block, "dynamic", { density=1, friction=2, bounce=0 } )
+block.angularDamping = 3
+-- block:setFillColor( 1, 0, 0 ) -- Uncomment this line to apply red tint to the block.
 
-local wallB = display.newRect( worldGroup, display.contentCenterX, 320+letterboxHeight, display.actualContentWidth, 20 )
-wallB.anchorY = 0
-physics.addBody( wallB, "static", { bounce=0.4, friction=0.6 } )
-
--- Create triangle function
-local function createTriangle()
-	local triangleShape = { 0,-32, 37,32, -37,32 }
-	local triangle = display.newPolygon( worldGroup, 0, 0, triangleShape )
-	physics.addBody( triangle, { friction=0.5, bounce=0.3, shape=triangleShape } )
-	return triangle
+for i = 1, 4 do
+	local ground = display.newImage( "img/platformBase2.png", i*250-160, 630 )
+	physics.addBody( ground, "static", { density=1, friction=0.9, bounce=0 } )
 end
 
--- Create hexagon function
-local function createHexagon()
-	local hexagonShape = { 0,-38, 33,-19, 33,19, 0,38, -33,19, -33,-19 }
-	local hexagon = display.newPolygon( worldGroup, 0, 0, hexagonShape )
-	physics.addBody( hexagon, { friction=0.5, bounce=0.4, shape=hexagonShape } )
-	return hexagon
-end
+local text = display.newText( "Drag the block with your mouse", 640, 40, native.systemFontBold, 40 )
 
--- Create small box function
-local function createBoxSmall()
-	local boxSmall = display.newRect( worldGroup, 0, 0, 50, 50 )
-	physics.addBody( boxSmall, { friction=0.5, bounce=0.4 } )
-	return boxSmall
-end
+local function dragObject( event, params )
+	local body = event.target
+	local phase = event.phase
+	local stage = display.getCurrentStage()
 
--- Create large box function
-local function createBoxLarge()
-	local boxLarge = display.newRect( worldGroup, 0, 0, 75, 75 )
-	physics.addBody( boxLarge, { friction=0.5, bounce=0.4 } )
-	return boxLarge
-end
+	if "began" == phase then
+		stage:setFocus( body )
+		body.isFocus = true
+		body.tempJoint = physics.newJoint( "touch", body, event.x, event.y )
 
--- Create cell function
-local function createCell()
-	local cellShape = { -30,-10, -25,-15, 25,-15, 30,-10, 30,10, 25,15, -25,15, -30,10 }
-	local cell = display.newPolygon( worldGroup, 0, 0, cellShape )
-	physics.addBody( cell, { friction=0.5, bounce=0.4, shape=cellShape } )
-	return cell
-end
+	elseif body.isFocus then
+		if "moved" == phase then
+			body.tempJoint:setTarget( event.x, event.y )
 
--- Create ball function
-local function createBall()
-	local ball = display.newCircle( worldGroup, 0, 0, 30 )
-	physics.addBody( ball, { friction=0.5, bounce=0.7, radius=30 } )
-	return ball
-end
+		elseif "ended" == phase or "cancelled" == phase then
+			stage:setFocus( nil )
+			body.isFocus = false	
+			body.tempJoint:removeSelf()
 
--- Create random object function
-local function createRandomObject()
-	local r = math.random( 1, 6 )
-	local object
-
-	if ( r == 1 ) then
-		object = createTriangle()
-	elseif ( r == 2 ) then
-		object = createHexagon()
-	elseif ( r == 3 ) then
-		object = createBoxSmall()
-	elseif ( r == 4 ) then
-		object = createBoxLarge()
-	elseif ( r == 5 ) then
-		object = createCell()
-	elseif ( r == 6 ) then
-		object = createBall()
-	end
-
-	return object
-end
-
--- Fill the content area with some objects
-local function spawnObjects()
-	local xIndex = 0
-	local yPos = 100
-
-	for i = 1, 8 do
-		local object = createRandomObject()
-		object:setFillColor( ( math.random( 4, 8 ) / 10 ), ( math.random( 0, 2 ) / 10 ), ( math.random( 4, 10 ) / 10 ) )
-
-		if ( xIndex == 4 ) then
-			xIndex = 0
-			yPos = 220
 		end
-
-		object.y = yPos + ( math.random( -1, 1 ) * 15 )
-		object.x = ( xIndex * 120 ) + 60 + ( math.random( -1, 1 ) * 15 )
-		xIndex = xIndex + 1
 	end
-end
 
--- Function to adjust gravity based on accelerometer response
-local function onTilt( event )
-	-- Gravity is in portrait orientation on Android, iOS, and Windows Phone
-	-- On tvOS, gravity is in the orientation of the device attached to the event
-	if ( event.device ) then
-		physics.setGravity( ( 9.8 * event.xGravity ), ( -9.8 * event.yGravity ) )
-	else
-		physics.setGravity( ( -9.8 * event.yGravity ), ( -9.8 * event.xGravity ) )
-	end
+	return true
 end
-
--- Detect if accelerometer is supported
-if ( system.hasEventSource( "accelerometer" ) ) then
-	-- Set accelerometer to maximum responsiveness
-	system.setAccelerometerInterval( 100 )
-	-- Start listening for accelerometer events
-	Runtime:addEventListener( "accelerometer", onTilt )
-	-- Spawn some objects
-	spawnObjects()
-else
-	local shade = display.newRect( worldGroup, display.contentCenterX, display.contentHeight-display.screenOriginY-18, display.actualContentWidth, 36 )
-	shade:setFillColor( 0, 0, 0, 0.7 )
-	local msg = display.newText( worldGroup, "Accelerometer not supported on this platform", display.contentCenterX, shade.y, appFont, 13 )
-	msg:setFillColor( 1, 0, 0.2 )
-end
+block:addEventListener( "touch", dragObject )
+-- sword:addEventListener( "touch", dragObject ) -- Uncomment to make the sword draggable too.
